@@ -27,4 +27,11 @@ jobs:
           else
             echo "Gradlew not found, skipping build"
           fi
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/*.apk
+          
           
