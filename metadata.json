@@ -1,0 +1,8 @@
+{
+  "name": "Remix Remix Smart Toolbox",
+  "description": "A versatile all-in-one utility hub featuring scanners, converters, and phone tools with a clean, professional, and modern design.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}ta
