@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Status Saver — UI Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-page:#0B0D0F;
+    --bg-phone:#111417;
+    --surface:#1B1F23;
+    --surface-2:#22262B;
+    --accent:#2FE0A8;
+    --accent-dim:#1B8F6C;
+    --text:#EDEFF1;
+    --text-muted:#8A9199;
+    --danger:#FF6B6B;
+    --radius:22px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    background:var(--bg-page);
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-family:'Inter',sans-serif;
+    padding:40px 16px;
+  }
+  .stage-label{
+    position:fixed;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    color:var(--text-muted);
+    font-size:12px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .stage-label b{color:var(--accent);}
+
+  .phone{
+    width:380px;
+    height:800px;
+    background:var(--bg-phone);
+    border-radius:44px;
+    border:8px solid #05070A;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.6), inset 0 0 0 1px rgba(255,255,255,0.03);
+    overflow:hidden;
+    position:relative;
+    display:flex;
+    flex-direction:column;
+  }
+  .notch{
+    position:absolute;
+    top:0; left:50%; transform:translateX(-50%);
+    width:120px; height:26px;
+    background:#05070A;
+    border-radius:0 0 16px 16px;
+    z-index:50;
+  }
+
+  /* Header */
+  .header{
+    padding:44px 20px 16px;
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+  }
+  .header h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:700;
+    font-size:26px;
+    color:var(--text);
+    letter-spacing:-0.02em;
+  }
+  .header h1 span{color:var(--accent);}
+  .header .count{
+    font-size:12px;
+    color:var(--text-muted);
+    font-family:'Space Grotesk',sans-serif;
+  }
+
+  /* Screens container */
+  .screens{ flex:1; position:relative; overflow:hidden; }
+  .screen{
+    position:absolute; inset:0;
+    display:flex; flex-direction:column;
+    opacity:0; pointer-events:none;
+    transition:opacity .35s ease;
+  }
+  .screen.active{ opacity:1; pointer-events:auto; }
+
+  /* Permission screen */
+  #screen-permission{
+    align-items:center; justify-content:center;
+    text-align:center; padding:32px;
+    gap:22px;
+  }
+  .ring-icon{
+    width:84px; height:84px;
+    border-radius:50%;
+    background:radial-gradient(circle at 30% 30%, var(--surface-2), var(--surface));
+    border:1px solid rgba(255,255,255,0.06);
+    display:flex; align-items:center; justify-content:center;
+    position:relative;
+  }
+  .ring-icon svg{ width:36px; height:36px; stroke:var(--accent); }
+  .ring-icon::after{
+    content:'';
+    position:absolute; inset:-6px;
+    border-radius:50%;
+    border:1px solid var(--accent-dim);
+    opacity:.5;
+  }
+  #screen-permission h2{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:19px; color:var(--text); font-weight:600;
+  }
+  #screen-permission p{
+    font-size:13.5px; color:var(--text-muted); line-height:1.6; max-width:260px;
+  }
+  .btn-primary{
+    background:var(--accent);
+    color:#06120D;
+    border:none;
+    padding:14px 28px;
+    border-radius:14px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600;
+    font-size:14px;
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 8px 20px rgba(47,224,168,0.25);
+  }
+  .btn-primary:hover{ transform:translateY(-2px); box-shadow:0 12px 26px rgba(47,224,168,0.35); }
+  .btn-primary:active{ transform:translateY(0px) scale(0.98); }
+
+  /* Grid screen */
+  #screen-grid{ padding:0 16px 16px; overflow-y:auto; }
+  .grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:6px;
+  }
+  .tile{
+    position:relative;
+    aspect-ratio:1/1;
+    border-radius:12px;
+    overflow:hidden;
+    cursor:pointer;
+    background:var(--surface-2);
+  }
+  .tile img.thumb-art{
+    width:100%; height:100%; object-fit:cover;
+    transition:transform .3s ease;
+  }
+  .tile:hover img.thumb-art{ transform:scale(1.06); }
+  .tile .badge-video{
+    position:absolute; left:6px; bottom:6px;
+    background:rgba(0,0,0,0.55);
+    backdrop-filter:blur(4px);
+    color:#fff; font-size:9.5px; font-weight:600;
+    padding:3px 6px; border-radius:6px;
+    display:flex; align-items:center; gap:3px;
+    font-family:'Space Grotesk',sans-serif;
+  }
+  .tile .save-btn{
+    position:absolute; right:6px; bottom:6px;
+    width:26px; height:26px; border-radius:8px;
+    background:rgba(0,0,0,0.55);
+    backdrop-filter:blur(4px);
+    display:flex; align-items:center; justify-content:center;
+    border:none; cursor:pointer;
+  }
+  .tile .save-btn svg{ width:13px; height:13px; stroke:#fff; }
+  .tile .save-btn.saved{ background:var(--accent); }
+  .tile .save-btn.saved svg{ stroke:#06120D; }
+
+  .empty-note{
+    text-align:center; color:var(--text-muted); font-size:12.5px;
+    padding:24px; line-height:1.6;
+  }
+
+  /* Preview screen */
+  #screen-preview{ background:#000; }
+  .preview-top{
+    position:absolute; top:0; left:0; right:0;
+    padding:44px 16px 12px;
+    display:flex; justify-content:space-between; align-items:center;
+    z-index:5;
+    background:linear-gradient(to bottom, rgba(0,0,0,0.6), transparent);
+  }
+  .close-btn{
+    width:32px; height:32px; border-radius:50%;
+    background:rgba(255,255,255,0.1);
+    border:none; display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .close-btn svg{ width:16px; height:16px; stroke:#fff; }
+  .preview-media{
+    flex:1; display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  .preview-media img{ width:100%; height:100%; object-fit:cover; }
+  .preview-actions{
+    display:flex; gap:10px; padding:18px 16px 26px;
+    background:linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+    position:absolute; bottom:0; left:0; right:0;
+  }
+  .action-btn{
+    flex:1;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    padding:13px; border-radius:14px;
+    font-family:'Space Grotesk',sans-serif;
+    font-weight:600; font-size:13.5px;
+    cursor:pointer; border:none;
+    transition:transform .15s ease;
+  }
+  .action-btn:active{ transform:scale(0.97); }
+  .action-btn svg{ width:16px; height:16px; }
+  .action-save{ background:var(--accent); color:#06120D; }
+  .action-save svg{ stroke:#06120D; }
+  .action-save.saved{ background:var(--surface-2); color:var(--accent); }
+  .action-save.saved svg{ stroke:var(--accent); }
+  .action-share{ background:rgba(255,255,255,0.12); color:#fff; }
+  .action-share svg{ stroke:#fff; }
+
+  /* Toast */
+  .toast{
+    position:absolute; bottom:100px; left:50%;
+    transform:translateX(-50%) translateY(20px);
+    background:var(--surface-2);
+    color:var(--text);
+    padding:10px 18px;
+    border-radius:12px;
+    font-size:12.5px;
+    font-family:'Inter',sans-serif;
+    border:1px solid rgba(255,255,255,0.08);
+    opacity:0;
+    transition:all .3s ease;
+    z-index:100;
+    pointer-events:none;
+    white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(0); }
+  .toast .dot{
+    display:inline-block; width:6px; height:6px; border-radius:50%;
+    background:var(--accent); margin-right:8px;
+  }
+
+  .demo-note{
+    text-align:center;
+    color:var(--text-muted);
+    font-size:11px;
+    max-width:380px;
+    margin-top:18px;
+    line-height:1.6;
+    font-family:'Inter',sans-serif;
+  }
+  .wrap{ display:flex; flex-direction:column; align-items:center; }
+</style>
+</head>
+<body>
+
+<div class="stage-label">UI Demo &nbsp;·&nbsp; <b>Sample data</b>, koi real WhatsApp access nahi</div>
+
+<div class="wrap">
+<div class="phone">
+  <div class="notch"></div>
+
+  <div class="header">
+    <h1>Status<span>Saver</span></h1>
+    <div class="count" id="itemCount">8 statuses</div>
+  </div>
+
+  <div class="screens">
+
+    <!-- Permission screen -->
+    <div class="screen" id="screen-permission">
+      <div class="ring-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/></svg>
+      </div>
+      <h2>Status folder ki permission dein</h2>
+      <p>Statuses dekhne ke liye ek baar WhatsApp ke .Statuses folder ka access dena hoga — system ki apni safe screen ke through.</p>
+      <button class="btn-primary" onclick="showGrid()">Folder Select Karein</button>
+    </div>
+
+    <!-- Grid screen -->
+    <div class="screen" id="screen-grid">
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <!-- Preview screen -->
+    <div class="screen" id="screen-preview">
+      <div class="preview-top">
+        <button class="close-btn" onclick="closePreview()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+        </button>
+        <div style="width:32px"></div>
+      </div>
+      <div class="preview-media">
+        <img id="previewImg" src="" alt="">
+      </div>
+      <div class="preview-actions">
+        <button class="action-btn action-save" id="previewSaveBtn" onclick="toggleSavePreview()">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+          <span id="previewSaveLabel">Save</span>
+        </button>
+        <button class="action-btn action-share">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8M16 6l-4-4-4 4M12 2v13"/></svg>
+          Share
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="toast" id="toast"><span class="dot"></span><span id="toastText">Saved</span></div>
+</div>
+
+<div class="demo-note">Yeh sirf design/interaction demo hai — sample gradient "photos" ka istemaal kiya gaya hai. Asli app WhatsApp ke folder se real statuses padhega (Android Studio build ke baad).</div>
+</div>
+
+<script>
+  const palettes = [
+    ['#FF6B6B','#FFD93D'], ['#2FE0A8','#0F7B5C'], ['#6C63FF','#B388FF'],
+    ['#FF9A3C','#FF6B6B'], ['#38B6FF','#5CE1E6'], ['#FF6BCB','#845EC2'],
+    ['#F9C80E','#F86624'], ['#43E97B','#38F9D7']
+  ];
+
+  const items = palettes.map((p, i) => ({
+    id: i,
+    isVideo: i % 3 === 0,
+    saved: false,
+    gradient: `linear-gradient(135deg, ${p[0]}, ${p[1]})`
+  }));
+
+  function svgDataUri(gradId, c1, c2){
+    const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'>
+      <defs><linearGradient id='${gradId}' x1='0' y1='0' x2='1' y2='1'>
+        <stop offset='0' stop-color='${c1}'/><stop offset='1' stop-color='${c2}'/>
+      </linearGradient></defs>
+      <rect width='300' height='300' fill='url(#${gradId})'/>
+    </svg>`;
+    return 'data:image/svg+xml;utf8,' + encodeURIComponent(svg);
+  }
+
+  const grid = document.getElementById('grid');
+  const itemCount = document.getElementById('itemCount');
+
+  function render(){
+    grid.innerHTML = '';
+    items.forEach((item, i) => {
+      const [c1, c2] = palettes[i];
+      const tile = document.createElement('div');
+      tile.className = 'tile';
+      tile.innerHTML = `
+        <img class="thumb-art" src="${svgDataUri('g'+i, c1, c2)}">
+        ${item.isVideo ? '<div class="badge-video">▶ Video</div>' : ''}
+        <button class="save-btn ${item.saved ? 'saved' : ''}" onclick="toggleSave(event, ${i})">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+        </button>
+      `;
+      tile.querySelector('.thumb-art').addEventListener('click', () => openPreview(i));
+      grid.appendChild(tile);
+    });
+    itemCount.textContent = items.length + ' statuses';
+  }
+
+  function toggleSave(e, i){
+    e.stopPropagation();
+    items[i].saved = !items[i].saved;
+    render();
+    showToast(items[i].saved ? 'Gallery mein save ho gaya' : 'Save hataya gaya');
+  }
+
+  let currentPreview = null;
+  function openPreview(i){
+    currentPreview = i;
+    const [c1, c2] = palettes[i];
+    document.getElementById('previewImg').src = svgDataUri('pg'+i, c1, c2);
+    updatePreviewSaveBtn();
+    switchScreen('screen-preview');
+  }
+  function closePreview(){ switchScreen('screen-grid'); }
+  function toggleSavePreview(){
+    items[currentPreview].saved = !items[currentPreview].saved;
+    updatePreviewSaveBtn();
+    render();
+    showToast(items[currentPreview].saved ? 'Gallery mein save ho gaya' : 'Save hataya gaya');
+  }
+  function updatePreviewSaveBtn(){
+    const btn = document.getElementById('previewSaveBtn');
+    const label = document.getElementById('previewSaveLabel');
+    const saved = items[currentPreview].saved;
+    btn.classList.toggle('saved', saved);
+    label.textContent = saved ? 'Saved' : 'Save';
+  }
+
+  function switchScreen(id){
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+  function showGrid(){ switchScreen('screen-grid'); }
+
+  let toastTimer;
+  function showToast(text){
+    const toast = document.getElementById('toast');
+    document.getElementById('toastText').textContent = text;
+    toast.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => toast.classList.remove('show'), 1600);
+  }
+
+  render();
+  switchScreen('screen-permission');
+</script>
+
+</body>
+</html>
